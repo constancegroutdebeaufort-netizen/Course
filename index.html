@@ -128,6 +128,41 @@ tr.goal-row td{color:var(--z-race)}
 .sp.end{background:var(--accent);color:#0A0E13}.sp.end span{color:#0A0E13}
 .small{font-size:.8rem;color:var(--muted);margin:0}
 
+/* Conseil de la semaine */
+.tip{display:grid;grid-template-columns:auto 1fr;gap:10px;background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:.9rem}
+.tip b{font-family:var(--display);font-weight:800;font-size:1rem;text-transform:uppercase;color:var(--z-seuil);letter-spacing:.04em}
+.plan-line{font-size:.9rem;color:var(--muted)}
+.plan-line b{color:var(--ink)}
+
+/* Saisie des temps */
+.log{display:flex;flex-direction:column;gap:10px}
+.log-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.log-grid label{display:flex;flex-direction:column;gap:3px;font-size:.72rem;color:var(--muted)}
+.log-grid input{background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 8px;font:inherit;font-size:1rem;font-variant-numeric:tabular-nums;width:100%;min-width:0}
+.log-grid input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.times{display:flex;flex-wrap:wrap;gap:6px}
+.tm{border-radius:6px;padding:5px 9px;font-size:.8rem;background:var(--bg);border:1px solid var(--line)}
+.tm b{font-family:var(--display);font-weight:800;font-size:1.1rem;margin-right:4px}
+.tm.ok{border-color:var(--ok);color:var(--ok)}
+.tm.fast{border-color:var(--z-race);color:var(--z-race)}
+.tm.slow{border-color:var(--z-seuil);color:var(--z-seuil)}
+.verdict{font-size:.88rem;padding:10px 12px;border-radius:6px;background:var(--bg)}
+.verdict.good{color:var(--ok)}
+
+/* Planning */
+.planner{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.pd{background:var(--surface);border-radius:6px;padding:8px 4px;display:flex;flex-direction:column;align-items:stretch;gap:5px;text-align:center}
+.pd .dn{font-family:var(--display);font-weight:800;font-size:1.05rem}
+.pd button{border:1px solid var(--line);background:transparent;border-radius:4px;padding:7px 0;font-size:.74rem;font-weight:600;color:var(--muted)}
+.pd button[data-p="bad"][aria-pressed="true"]{background:#7B5CFF;border-color:#7B5CFF;color:#fff}
+.pd button[data-p="cf"][aria-pressed="true"]{background:#C9D1D9;border-color:#C9D1D9;color:#0A0E13}
+.pd .run{height:30px;border-radius:4px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:.95rem;border:1px dashed var(--line);color:var(--line)}
+.pd .run.on{border:0;background:var(--accent);color:#0A0E13}
+.pd .run.on.b{background:var(--z-ef);color:#fff}
+.why{font-size:.88rem;color:var(--muted);margin:0;display:flex;flex-direction:column;gap:4px}
+.why b{color:var(--ink)}
+.why .warn{color:var(--z-seuil)}
+
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,160%);background:var(--ok);color:#06150E;padding:12px 18px;border-radius:6px;font-weight:700;max-width:calc(100% - 32px);text-align:center;transition:transform .35s ease;z-index:20}
 .toast:not(.show){visibility:hidden;transition:transform .35s ease,visibility 0s .35s}
 .toast.show{transform:translate(-50%,0)}
@@ -155,6 +190,13 @@ tr.goal-row td{color:var(--z-race)}
   </section>
 
   <section id="week" style="display:flex;flex-direction:column;gap:14px"></section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <h2>Ta semaine type</h2>
+    <p class="small">Touche Bad ou CF les jours où tu en fais. L'appli place tes deux courses : A = la séance rapide, B = le footing.</p>
+    <div class="planner" id="planner"></div>
+    <div class="why" id="why"></div>
+  </section>
 
   <section style="display:flex;flex-direction:column;gap:10px">
     <h2>Tes allures</h2>
@@ -226,6 +268,19 @@ const WEEKS=[
   {id:"s12b",kind:"Déblocage",head:"25' footing + 4 accélérations",when:"Jeudi 4/02",steps:[{k:"ef",min:25},{k:"acc",n:4}]},
   {id:"race",kind:"La course",head:"10 km à 5'00",when:"Dimanche 7/02",steps:[{k:"run",km:10,p:300,lbl:"10 km"}]}]},
 ];
+const TIPS={
+ 1:"Garde au moins 24 h entre une grosse séance de jambes au CrossFit et le fractionné. Sinon tu rates tes allures sans que ce soit un problème de forme.",
+ 2:"Sur le fractionné, la dernière répétition doit être aussi rapide que la première. Si tu exploses à la fin, c'est que tu es parti·e trop vite.",
+ 3:"Le 10 km tranquille est à faire avant le départ du 4/12. Ensuite, rien d'obligatoire jusqu'au 13/12.",
+ 5:"Reprise : pas de rattrapage des séances non faites. Si les jambes sont lourdes, prends la version allégée du fractionné.",
+ 6:"Récup raccourcie à 1'15 cette semaine. Si tu ne tiens plus 4'45 sur les dernières, remets 1'30 plutôt que de ralentir.",
+ 7:"Premiers 2000 m : régularité avant tout. Et sur la sortie longue, les 3 derniers km à 5'10, pas plus vite.",
+ 8:"Semaine allégée côté course. Si la fatigue s'accumule, allège aussi le CrossFit.",
+ 9:"Repère clé : si les 3 × 3000 m à 4'57 passent sans finir à bloc, tu es sur la trajectoire du sub 50. Note tes temps.",
+ 10:"Le bloc de 5 km à 5'00 est une répétition générale : mêmes chaussures et même tenue que le jour J.",
+ 11:"Début de l'affûtage : évite les séances de jambes très lourdes au CrossFit.",
+ 12:"Allège le CrossFit cette semaine, pas de jambes après mardi. Jour J : premier km à 5'00, pas plus vite, même si tout le monde part fort.",
+};
 const ALL=WEEKS.flatMap(w=>w.s.map(s=>({...s,w})));
 const TOTAL=ALL.length;
 
@@ -294,12 +349,54 @@ function mini(s){
   return "<b>Version mini :</b> 30' tranquille, sans regarder la montre.";
 }
 
+/* Temps cibles d'une séance : répétitions (temps), blocs (allure au km), course (chrono) */
+function targetsOf(s){
+  if(s.id==="race") return [{lbl:"Chrono",t:3000,unit:""}];
+  const out=[];
+  s.steps.forEach(x=>{
+    if(x.k==="int") for(let i=0;i<x.n;i++) out.push({lbl:"Rép. "+(i+1),t:x.m*x.p/1000,unit:""});
+    if(x.k==="run") out.push({lbl:(x.lbl||"Bloc")+" /km",t:x.p,unit:"/km"});
+  });
+  return out;
+}
+function parseT(str){
+  str=(str||"").trim(); if(!str) return null;
+  let m=str.match(/^(\d{1,2})\s*['’:.,h ]\s*(\d{1,2})\s*["”]?$/); if(m&&+m[2]<60) return +m[1]*60+ +m[2];
+  m=str.match(/^(\d{1,2})(\d{2})$/); if(m&&+m[2]<60) return +m[1]*60+ +m[2];
+  return null;
+}
+const tol=t=>Math.max(3,t/150);
+function cls(val,t){const d=val-t;return Math.abs(d)<=tol(t)?"ok":d<0?"fast":"slow";}
+function delta(val,t){const d=Math.round(val-t);return d===0?"pile":(d>0?"+":"−")+Math.abs(d)+" s";}
+
+/* Planning : indices 0 = lundi */
+const DAYS=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+const DAYS_L=["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
+let plan={bad:[],cf:[]};
+function suggest(){
+  if(!plan.bad.length&&!plan.cf.length) return null;
+  const has=(k,i)=>plan[k].includes((i+7)%7), busy=i=>has("bad",i)||has("cf",i);
+  const sA=i=>(busy(i)?-2:3)-(has("cf",i-1)?3:0)-(has("bad",i-1)?1:0)-(has("cf",i+1)?0.5:0);
+  const sB=i=>busy(i)?-1:2;
+  let best=null;
+  for(let a=0;a<7;a++)for(let b=0;b<7;b++){
+    const dist=Math.min(Math.abs(a-b),7-Math.abs(a-b)); if(dist<1) continue;
+    const sc=sA(a)+sB(b)+(dist>=3?0.3:0)-(dist===1?1:0)-(a>b?0.05:0);
+    if(!best||sc>best.sc) best={a,b,sc};
+  }
+  const why=[];
+  why.push(`<span><b>A, ${DAYS_L[best.a]}</b> : ${busy(best.a)?"jour déjà chargé, fais la course avant l'autre sport":"jour sans autre sport"}${has("cf",best.a-1)?"":", pas de CrossFit la veille"}.</span>`);
+  why.push(`<span><b>B, ${DAYS_L[best.b]}</b> : ${busy(best.b)?"jour partagé, le footing reste tranquille":"jour sans autre sport"}.</span>`);
+  if(has("cf",best.a-1)) why.push(`<span class="warn">Impossible d'éviter le CrossFit la veille de la séance A : ce jour-là, fais plutôt du haut du corps.</span>`);
+  return {...best,why};
+}
+
 /* Stockage : espace privé synchronisé, avec copie locale */
 let state={},bonus=0,venues={};
 const LS="sub50-v1";
-try{const o=JSON.parse(localStorage.getItem(LS)||"{}");state=o.state||{};bonus=o.bonus||0;venues=o.venues||{};}catch(e){}
-const lsSave=()=>{try{localStorage.setItem(LS,JSON.stringify({state,bonus,venues}));}catch(e){}};
-let store={save(){lsSave();},saveBonus(){lsSave();}};
+try{const o=JSON.parse(localStorage.getItem(LS)||"{}");state=o.state||{};bonus=o.bonus||0;venues=o.venues||{};plan=o.plan||plan;}catch(e){}
+const lsSave=()=>{try{localStorage.setItem(LS,JSON.stringify({state,bonus,venues,plan}));}catch(e){}};
+let store={save(){lsSave();},saveBonus(){lsSave();},savePlan(){lsSave();}};
 async function initDb(){
   if(!window.claude?.use) return;
   try{
@@ -311,16 +408,18 @@ async function initDb(){
     let first=true;
     col.onSnapshot(snap=>{
       if(!snap.metadata.fromCache){clearTimeout(t);note.textContent="Séances synchronisées sur tous tes appareils.";}
-      const remote={};let rb=null;
-      snap.docs.forEach(doc=>{const v=doc.data();if(doc.id==="bonus")rb=v.count||0;else if(doc.id.startsWith("sess-"))remote[doc.id.slice(5)]=v;});
-      if(first&&snap.empty&&!snap.metadata.fromCache&&Object.keys(state).length){
+      const remote={};let rb=null,rp=null;
+      snap.docs.forEach(doc=>{const v=doc.data();if(doc.id==="bonus")rb=v.count||0;else if(doc.id==="planning")rp=v;else if(doc.id.startsWith("sess-"))remote[doc.id.slice(5)]=v;});
+      if(first&&snap.empty&&!snap.metadata.fromCache&&(Object.keys(state).length||plan.bad.length||plan.cf.length)){
         Object.entries(state).forEach(([id,v])=>col.doc("sess-"+id).set(v).catch(()=>{}));
         if(bonus) col.doc("bonus").set({count:bonus}).catch(()=>{});
-      }else if(!snap.metadata.fromCache||!snap.empty){state=remote;if(rb!==null)bonus=rb;lsSave();render();}
+        col.doc("planning").set({bad:plan.bad,cf:plan.cf}).catch(()=>{});
+      }else if(!snap.metadata.fromCache||!snap.empty){state=remote;if(rb!==null)bonus=rb;if(rp)plan={bad:rp.bad||[],cf:rp.cf||[]};lsSave();render();}
       first=false;
     },()=>{clearTimeout(t);note.textContent="Synchronisation indisponible : les séances restent sur cet appareil.";});
     store={save(id){lsSave();const v=state[id],r=col.doc("sess-"+id);(v?r.set(v):r.delete()).catch(()=>{});},
-           saveBonus(){lsSave();col.doc("bonus").set({count:bonus}).catch(()=>{});}};
+           saveBonus(){lsSave();col.doc("bonus").set({count:bonus}).catch(()=>{});},
+           savePlan(){lsSave();col.doc("planning").set({bad:plan.bad,cf:plan.cf}).catch(()=>{});}};
   }catch(e){}
 }
 
@@ -354,25 +453,74 @@ function render(){
   }
   const next=ALL.find(s=>!state[s.id]?.done);
   const range=`${dstr(w.start)} → ${dstr(wEnd(w))}`;
+  const sg=suggest();
+  const planLine=w.n===12?`<div class="plan-line">Jours imposés : <b>mardi</b>, <b>jeudi</b>, course <b>dimanche</b>.</div>`
+    :sg?`<div class="plan-line">Avec ta semaine type : séance A <b>${DAYS_L[sg.a]}</b>, séance B <b>${DAYS_L[sg.b]}</b>.</div>`
+    :`<div class="plan-line">Remplis « Ta semaine type » plus bas pour savoir quels jours courir.</div>`;
   box.innerHTML=`<div class="wk-head"><div><div class="phase">${w.phase}${w.tag?" · "+w.tag:""}</div><h2>Semaine ${w.n}</h2><div class="sub">${range}${sel===cur?" · cette semaine":""}</div></div>
       <button class="lazy-btn" id="lz" aria-expanded="${lazyOpen}">J'ai la flemme</button></div>
+    ${planLine}
+    ${TIPS[w.n]?`<div class="tip"><b>Conseil</b><span>${TIPS[w.n]}</span></div>`:""}
     ${lazyOpen&&next?`<div class="lazy"><q>${LAZY[lazyIdx]}</q><p>${mini(next)}</p><button class="link" id="lzm">Encore un argument →</button></div>`:""}
-    ${w.s.map(s=>card(s,next)).join("")}`;
+    ${w.s.map(s=>card({...s,w},next,sg)).join("")}`;
   box.querySelector("#lz").onclick=()=>{lazyOpen=!lazyOpen;render();};
   box.querySelector("#lzm")?.addEventListener("click",()=>{lazyIdx=(lazyIdx+1)%LAZY.length;render();});
   box.querySelectorAll("[data-venue]").forEach(b=>b.onclick=()=>{venues[b.dataset.id]=b.dataset.venue;lsSave();render();});
   box.querySelectorAll("[data-do]").forEach(b=>b.onclick=()=>{const id=b.dataset.do;
     if(state[id]?.done){delete state[id];store.save(id);render();return;}
     feelOpen=feelOpen===id?null:id;render();});
-  box.querySelectorAll("[data-feel]").forEach(b=>b.onclick=()=>{const id=b.dataset.id;
-    state[id]={done:true,feel:b.dataset.feel,at:new Date().toISOString()};store.save(id);feelOpen=null;lazyOpen=false;render();cheer();});
+  box.querySelectorAll("[data-feel]").forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=ALL.find(x=>x.id===id);
+    const times=targetsOf(s).map((_,j)=>parseT(document.getElementById(`t-${id}-${j}`)?.value));
+    state[id]={done:true,feel:b.dataset.feel,at:new Date().toISOString(),...(times.some(x=>x!==null)?{times}:{})};
+    store.save(id);feelOpen=null;lazyOpen=false;render();
+    if(id==="race"&&times[0]&&times[0]<3000) toast("SUB 50 en "+fmt(times[0])+" !"); else cheer();});
+  renderPlanner();
 }
-function card(s,next){
+function renderPlanner(){
+  const el=document.getElementById("planner"),sg=suggest();
+  el.innerHTML=DAYS.map((dn,i)=>{const r=sg?(sg.a===i?"A":sg.b===i?"B":""):"";
+    return `<div class="pd"><span class="dn">${dn}</span>
+      <button data-p="bad" data-d="${i}" aria-pressed="${plan.bad.includes(i)}">Bad</button>
+      <button data-p="cf" data-d="${i}" aria-pressed="${plan.cf.includes(i)}">CF</button>
+      <div class="run ${r?"on":""} ${r==="B"?"b":""}">${r||"–"}</div></div>`;}).join("");
+  el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const k=b.dataset.p,i=+b.dataset.d;
+    plan[k]=plan[k].includes(i)?plan[k].filter(x=>x!==i):[...plan[k],i].sort();store.savePlan();render();});
+  const n=plan.bad.length+plan.cf.length;
+  document.getElementById("why").innerHTML=sg?sg.why.join("")+(n!==5?`<span>Tu as indiqué ${n} séance${n>1?"s":""} de bad/CrossFit, pour 5 annoncées.</span>`:"")
+    :"<span>Aucun jour indiqué pour l'instant.</span>";
+}
+function logPanel(s){
+  const tg=targetsOf(s);
+  return `<div class="log">
+    ${tg.length?`<div class="feel-q">Tes temps (facultatif), au format 3'44</div>
+    <div class="log-grid">${tg.map((x,j)=>`<label for="t-${s.id}-${j}">${x.lbl}<input id="t-${s.id}-${j}" inputmode="text" autocomplete="off" placeholder="${fmt(x.t)}"></label>`).join("")}</div>`:""}
+    <div class="feel-q">C'était comment ?</div>
+    <div class="feels">${["Facile","Correct","Dur"].map(f=>`<button data-feel="${f}" data-id="${s.id}">${f}</button>`).join("")}</div></div>`;
+}
+function timesView(s,v){
+  if(!v.times) return "";
+  const tg=targetsOf(s);
+  const chips=v.times.map((t,j)=>t===null||!tg[j]?"":`<span class="tm ${cls(t,tg[j].t)}"><b class="num">${fmt(t)}</b>${tg[j].lbl} · ${delta(t,tg[j].t)}</span>`).join("");
+  let verdict="";
+  if(s.id==="s9a"){
+    const got=v.times.filter(x=>x!==null);
+    if(got.length===3){
+      const held=got.every((t,j)=>t<=tg[j].t+tol(tg[j].t));
+      verdict=held&&v.feel!=="Dur"?`<div class="verdict good">Repère validé : allures tenues sans finir à bloc. Tu es sur la trajectoire du sub 50.</div>`
+        :held?`<div class="verdict">Allures tenues, mais c'était dur. Reste sur le plan et pars bien à 5'00 le jour J, pas plus vite.</div>`
+        :`<div class="verdict">Allures pas tout à fait tenues. Une séance ne fait pas le résultat : regarde la semaine 10 et la fatigue CrossFit avant de conclure.</div>`;
+    }
+  }
+  return `<div class="times">${chips}</div>${verdict}`;
+}
+function card(s,next,sg){
   const v=state[s.id],done=!!v?.done;
   const venue=venues[s.id]||(s.steps.some(x=>x.k==="int")?"stade":"canal");
   const p=profileSvg(s);
+  const role=/^s\d+a$/.test(s.id)?"a":/^s\d+b$/.test(s.id)?"b":null;
+  const day=s.when||(sg&&role&&s.w.n!==12?DAYS_L[sg[role]].replace(/^./,c=>c.toUpperCase())+" conseillé":"");
   return `<article class="card ${done?"done":""}">
-    <div class="card-top"><div><div class="kind">${s.kind}</div><div class="when">${s.when?s.when+" · ":""}≈ ${p.min} min · ≈ ${kmTxt(kmOf(s).toFixed(1))} km</div></div>
+    <div class="card-top"><div><div class="kind">${s.kind}</div><div class="when">${day?day+" · ":""}≈ ${p.min} min · ≈ ${kmTxt(kmOf(s).toFixed(1))} km</div></div>
       ${done?`<span class="badge ok">Fait · ${v.feel||""}</span>`:next&&next.id===s.id?`<span class="badge todo">Prochaine</span>`:""}</div>
     <div class="headline">${s.head}</div>
     <div class="profile">${p.svg}<div class="prof-axis"><span>départ</span><span>${p.min} min</span></div></div>
@@ -382,8 +530,8 @@ function card(s,next){
       <button data-venue="canal" data-id="${s.id}" aria-pressed="${venue==="canal"}">Au canal</button></div>
     <ol class="steps">${stepRows(s,venue)}</ol>
     <div class="foot">
-      ${feelOpen===s.id&&!done?`<div class="feel-q">C'était comment ?</div><div class="feels">${["Facile","Correct","Dur"].map(f=>`<button data-feel="${f}" data-id="${s.id}">${f}</button>`).join("")}</div>`:
-        `<button class="do" data-do="${s.id}">${done?"Annuler":"C'est fait"}</button>`}
+      ${done?timesView(s,v):""}
+      ${feelOpen===s.id&&!done?logPanel(s):`<button class="do" data-do="${s.id}">${done?"Annuler":"C'est fait"}</button>`}
     </div></article>`;
 }
 function cheer(){const n=ALL.filter(s=>state[s.id]?.done).length,l=TOTAL-n;
