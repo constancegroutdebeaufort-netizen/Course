@@ -1,0 +1,543 @@
+<title>Objectif 49'59</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap">
+<style>
+/* Layout : appli mobile, thème sombre assumé (course de nuit). Compte à rebours → bande des 12 semaines → les séances de la semaine choisie, chacune dessinée comme un profil d'intensité → allures → jour J. */
+:root{
+  color-scheme:dark;
+  --bg:#0A0E13; --surface:#131A22; --surface2:#1A232D; --ink:#F1F4F7; --muted:#8B98A6; --line:#26313C;
+  --accent:#FF5A36;
+  --z-rec:#33404D; --z-ef:#3F7FD0; --z-seuil:#E9BC2F; --z-race:#FF9142; --z-fast:#FF4B2B;
+  --ok:#43C78A;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Inter Tight",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:640px;margin:0 auto;padding-block:18px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:26px}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.label{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h2{font-family:var(--display);font-weight:800;font-size:1.9rem;line-height:1;margin:0;text-transform:uppercase;letter-spacing:.01em}
+
+/* Hero */
+.hero{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;align-items:end}
+.j{font-family:var(--display);font-weight:900;font-size:clamp(5.5rem,30vw,9rem);line-height:.78;letter-spacing:-.02em;grid-row:span 2}
+.j small{font-size:.38em;color:var(--accent);margin-right:.04em;vertical-align:top;position:relative;top:.12em}
+.hero-txt{display:flex;flex-direction:column;gap:2px;padding-bottom:6px;min-width:0}
+.hero-txt b{font-family:var(--display);font-weight:800;font-size:1.65rem;line-height:1;text-transform:uppercase}
+.hero-txt span{color:var(--muted);font-size:.9rem}
+.goal{display:inline-flex;align-items:baseline;gap:6px;background:var(--accent);color:#0A0E13;padding:2px 9px 1px;border-radius:3px;font-weight:700;font-size:.85rem;align-self:flex-start;margin-top:6px}
+.hero-txt .goal{color:#0A0E13}
+.goal em{font-family:var(--display);font-style:normal;font-weight:900;font-size:1.25rem}
+.bar{grid-column:1/-1;margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.bar-track{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--z-ef),var(--z-race) 70%,var(--accent));border-radius:4px;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.bar-row{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted)}
+.bar-row b{color:var(--ink)}
+
+/* Bande des semaines */
+.weeks{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:4px}
+.wk{background:var(--surface);border:1px solid transparent;border-radius:4px;padding:7px 0 6px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.wk span{font-family:var(--display);font-weight:800;font-size:1.05rem;line-height:1}
+.wk .dots{display:flex;gap:3px}
+.wk .dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.wk .dots i.on{background:var(--ok)}
+.wk.now{border-color:var(--muted)}
+.wk.sel{background:var(--ink);color:var(--bg)}
+.wk.sel .dots i{background:#C9D1D9}.wk.sel .dots i.on{background:#1E9A60}
+.wk.vac span{font-size:.8rem}
+.weeks-legend{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-top:6px;gap:8px;flex-wrap:wrap}
+
+/* En-tête de semaine */
+.wk-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.wk-head .sub{color:var(--muted);font-size:.9rem;margin-top:4px}
+.phase{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+.lazy-btn{border:1px solid var(--line);background:transparent;border-radius:999px;padding:8px 14px;font-size:.85rem;font-weight:600}
+.lazy-btn[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:#0A0E13}
+.lazy{background:var(--surface);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--accent)}
+.lazy q{font-family:var(--display);font-weight:800;font-size:1.7rem;line-height:1.05;quotes:none;text-transform:uppercase;text-wrap:balance}
+.lazy p{margin:0;color:var(--muted);font-size:.92rem}
+.lazy p b{color:var(--ink)}
+.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;font-size:.88rem;align-self:flex-start}
+
+/* Carte séance */
+.card{background:var(--surface);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.card.done{opacity:.72}
+.card-top{padding:16px 16px 0;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.kind{font-family:var(--display);font-weight:800;font-size:2.1rem;line-height:.95;text-transform:uppercase}
+.when{font-size:.8rem;color:var(--muted);margin-top:4px}
+.badge{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;border-radius:3px;white-space:nowrap}
+.badge.todo{background:var(--accent);color:#0A0E13}
+.badge.ok{background:rgba(67,199,138,.15);color:var(--ok)}
+.headline{padding:6px 16px 0;font-size:1rem;color:var(--ink)}
+.profile{padding:14px 16px 4px}
+.profile svg{display:block;width:100%;height:64px}
+.prof-axis{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:4px}
+.venue{margin:10px 16px 0;display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:6px;padding:3px}
+.venue button{border:0;background:transparent;padding:8px;border-radius:4px;font-weight:600;font-size:.88rem;color:var(--muted)}
+.venue button[aria-pressed="true"]{background:var(--surface2);color:var(--ink)}
+.steps{list-style:none;margin:0;padding:12px 16px 4px;display:flex;flex-direction:column}
+.step{display:grid;grid-template-columns:12px 1fr auto;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
+.step:first-child{border-top:0}
+.step i{width:12px;height:12px;border-radius:3px;margin-top:4px}
+.step .main{font-weight:600;min-width:0}
+.step .how{font-size:.85rem;color:var(--muted);margin-top:2px}
+.step .big{font-family:var(--display);font-weight:800;font-size:1.5rem;line-height:1;text-align:right;white-space:nowrap}
+.step .big small{display:block;font-family:var(--body);font-weight:500;font-size:.68rem;color:var(--muted);letter-spacing:.04em;margin-top:3px}
+.adv{font-size:.68rem;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-left:6px;font-weight:500;vertical-align:2px}
+.note{margin:4px 16px 0;font-size:.84rem;color:var(--z-seuil)}
+.foot{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.do{border:0;background:var(--ink);color:var(--bg);border-radius:6px;padding:14px;font-weight:700;font-size:1rem;width:100%}
+.card.done .do{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500;font-size:.88rem;padding:10px}
+.feels{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.feels button{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:12px 6px;font-weight:600}
+.feels button:hover{border-color:var(--ok)}
+.feel-q{font-size:.85rem;color:var(--muted);text-align:center}
+
+/* Vacances */
+.vac{background:linear-gradient(160deg,#0F3B3A,#142530 70%);border-radius:10px;padding:22px 18px;display:flex;flex-direction:column;gap:14px}
+.vac b.t{font-family:var(--display);font-weight:900;font-size:2.6rem;line-height:.9;text-transform:uppercase}
+.vac p{margin:0;color:#B9D3D2}
+.counter{display:flex;align-items:center;gap:14px}
+.counter button{width:44px;height:44px;border-radius:50%;border:1px solid #4F7C7A;background:transparent;font-size:1.3rem;font-weight:700}
+.counter b{font-family:var(--display);font-weight:900;font-size:2.4rem;min-width:1.2em;text-align:center}
+
+/* Allures */
+.paces{background:var(--surface);border-radius:10px;overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:10px 12px;text-align:right;white-space:nowrap}
+th{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+th:first-child,td:first-child{text-align:left}
+tbody tr{border-top:1px solid var(--line)}
+td .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px}
+td.v{font-family:var(--display);font-weight:800;font-size:1.25rem}
+tr.goal-row td{color:var(--z-race)}
+
+/* Jour J */
+.splits{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.sp{background:var(--surface);border-radius:6px;padding:8px 6px;text-align:center}
+.sp span{font-size:.7rem;color:var(--muted)}
+.sp b{display:block;font-family:var(--display);font-weight:800;font-size:1.3rem}
+.sp.mid{background:var(--z-race);color:#0A0E13}.sp.mid span{color:#0A0E13}
+.sp.end{background:var(--accent);color:#0A0E13}.sp.end span{color:#0A0E13}
+.small{font-size:.8rem;color:var(--muted);margin:0}
+
+/* Conseil de la semaine */
+.tip{display:grid;grid-template-columns:auto 1fr;gap:10px;background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:.9rem}
+.tip b{font-family:var(--display);font-weight:800;font-size:1rem;text-transform:uppercase;color:var(--z-seuil);letter-spacing:.04em}
+.plan-line{font-size:.9rem;color:var(--muted)}
+.plan-line b{color:var(--ink)}
+
+/* Saisie des temps */
+.log{display:flex;flex-direction:column;gap:10px}
+.log-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.log-grid label{display:flex;flex-direction:column;gap:3px;font-size:.72rem;color:var(--muted)}
+.log-grid input{background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 8px;font:inherit;font-size:1rem;font-variant-numeric:tabular-nums;width:100%;min-width:0}
+.log-grid input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.times{display:flex;flex-wrap:wrap;gap:6px}
+.tm{border-radius:6px;padding:5px 9px;font-size:.8rem;background:var(--bg);border:1px solid var(--line)}
+.tm b{font-family:var(--display);font-weight:800;font-size:1.1rem;margin-right:4px}
+.tm.ok{border-color:var(--ok);color:var(--ok)}
+.tm.fast{border-color:var(--z-race);color:var(--z-race)}
+.tm.slow{border-color:var(--z-seuil);color:var(--z-seuil)}
+.verdict{font-size:.88rem;padding:10px 12px;border-radius:6px;background:var(--bg)}
+.verdict.good{color:var(--ok)}
+
+/* Planning */
+.planner{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.pd{background:var(--surface);border-radius:6px;padding:8px 4px;display:flex;flex-direction:column;align-items:stretch;gap:5px;text-align:center}
+.pd .dn{font-family:var(--display);font-weight:800;font-size:1.05rem}
+.pd button{border:1px solid var(--line);background:transparent;border-radius:4px;padding:7px 0;font-size:.74rem;font-weight:600;color:var(--muted)}
+.pd button[data-p="bad"][aria-pressed="true"]{background:#7B5CFF;border-color:#7B5CFF;color:#fff}
+.pd button[data-p="cf"][aria-pressed="true"]{background:#C9D1D9;border-color:#C9D1D9;color:#0A0E13}
+.pd .run{height:30px;border-radius:4px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:.95rem;border:1px dashed var(--line);color:var(--line)}
+.pd .run.on{border:0;background:var(--accent);color:#0A0E13}
+.pd .run.on.b{background:var(--z-ef);color:#fff}
+.why{font-size:.88rem;color:var(--muted);margin:0;display:flex;flex-direction:column;gap:4px}
+.why b{color:var(--ink)}
+.why .warn{color:var(--z-seuil)}
+
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,160%);background:var(--ok);color:#06150E;padding:12px 18px;border-radius:6px;font-weight:700;max-width:calc(100% - 32px);text-align:center;transition:transform .35s ease;z-index:20}
+.toast:not(.show){visibility:hidden;transition:transform .35s ease,visibility 0s .35s}
+.toast.show{transform:translate(-50%,0)}
+@media (max-width:420px){.weeks{grid-template-columns:repeat(7,minmax(0,1fr))}.splits{grid-template-columns:repeat(5,1fr)}.kind{font-size:1.8rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="j num" id="days"><small>J-</small>–</div>
+    <div class="hero-txt">
+      <b>10 km</b>
+      <span>Dimanche 7 février 2027</span>
+      <span class="goal">Objectif <em class="num">49'59</em></span>
+    </div>
+    <div class="bar">
+      <div class="bar-track"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+      <div class="bar-row"><span><b class="num" id="nDone">0</b> séances faites sur 24</span><span><b class="num" id="nKm">0</b> km</span></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="weeks" id="weeks"></div>
+    <div class="weeks-legend"><span>Touche une semaine pour la voir</span><span>● = séance faite</span></div>
+  </section>
+
+  <section id="week" style="display:flex;flex-direction:column;gap:14px"></section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <h2>Ta semaine type</h2>
+    <p class="small">Touche Bad ou CF les jours où tu en fais. L'appli place tes deux courses : A = la séance rapide, B = le footing.</p>
+    <div class="planner" id="planner"></div>
+    <div class="why" id="why"></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <h2>Tes allures</h2>
+    <div class="paces"><table>
+      <thead><tr><th>Allure</th><th>Au km</th><th>Tour de stade</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sw" style="background:var(--z-ef)"></span>Footing (EF)</td><td class="v num">5'50–6'15</td><td class="num">2'20–2'30</td></tr>
+        <tr><td><span class="sw" style="background:var(--z-fast)"></span>Fractionné</td><td class="v num">4'40–4'50</td><td class="num">1'52–1'56</td></tr>
+        <tr><td><span class="sw" style="background:var(--z-seuil)"></span>Seuil</td><td class="v num">5'05</td><td class="num">2'02</td></tr>
+        <tr class="goal-row"><td><span class="sw" style="background:var(--z-race)"></span>Allure course</td><td class="v num">5'00</td><td class="num">2'00</td></tr>
+      </tbody></table></div>
+    <p class="small">Tour de stade = 400 m dans le couloir 1. Au canal, fie-toi à l'allure au km de ta montre.</p>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <h2>Le jour J</h2>
+    <div class="splits" id="splits"></div>
+    <p class="small">Temps de passage à 5'00/km. Le piège classique est le premier km trop rapide dans l'euphorie du départ : vise 5'00, pas 4'45.</p>
+  </section>
+
+  <p class="small" id="syncNote"></p>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const RACE=new Date(2027,1,7);
+const d=(y,m,dd)=>new Date(y,m-1,dd);
+const fmt=s=>{s=Math.round(s);return Math.floor(s/60)+"'"+String(s%60).padStart(2,"0");};
+const dstr=dt=>dt.toLocaleDateString("fr-FR",{day:"numeric",month:"short"}).replace(".","");
+const kmTxt=k=>String(k).replace(".",",");
+
+/* Étapes : ef {min|km}, int {n,m,p,rec}, run {km|min,p}, acc {n}. adv = ajouté (conseillé, hors programme) */
+const WU={k:"ef",min:15,adv:true,lbl:"Échauffement"}, CD={k:"ef",min:10,adv:true,lbl:"Retour au calme"};
+const WEEKS=[
+ {n:1,phase:"Avant les vacances",start:d(2026,11,16),s:[
+  {id:"s1a",kind:"Fractionné",head:"5 × 800 m à 4'40",steps:[{k:"ef",min:10,lbl:"Échauffement"},{k:"int",n:5,m:800,p:280,rec:90},{k:"ef",min:10,lbl:"Retour au calme"}]},
+  {id:"s1b",kind:"Footing",head:"8 km tranquille",steps:[{k:"ef",km:8}]}]},
+ {n:2,phase:"Avant les vacances",start:d(2026,11,23),s:[
+  {id:"s2a",kind:"Fractionné",head:"4 × 1000 m à 4'45",steps:[WU,{k:"int",n:4,m:1000,p:285,rec:90},CD]},
+  {id:"s2b",kind:"Footing",head:"9 km tranquille",steps:[{k:"ef",km:9}]}]},
+ {n:3,phase:"Avant les vacances",start:d(2026,11,30),s:[
+  {id:"s3a",kind:"Fractionné",head:"5 × 1000 m à 4'45",steps:[WU,{k:"int",n:5,m:1000,p:285,rec:90},CD]},
+  {id:"s3b",kind:"Footing",head:"10 km tranquille",note:"À caser avant le départ du 4/12.",steps:[{k:"ef",km:10}]}]},
+ {n:"R",vac:true,phase:"Vacances",start:d(2026,12,4),end:d(2026,12,12),s:[]},
+ {n:5,phase:"Reprise",start:d(2026,12,13),endOff:7,intro:"Dimanche 13/12, au retour : 6 km très facile.",s:[
+  {id:"d13",kind:"Reprise",head:"6 km très facile",when:"Dimanche 13/12",steps:[{k:"ef",km:6}]},
+  {id:"s5a",kind:"Fractionné",head:"5 × 1000 m à 4'45",note:"Trop chargé au retour ? Remplace par 25' footing + 4 accélérations.",steps:[WU,{k:"int",n:5,m:1000,p:285,rec:90},CD]},
+  {id:"s5b",kind:"Footing",head:"9 km tranquille",steps:[{k:"ef",km:9}]}]},
+ {n:6,phase:"Reprise",start:d(2026,12,21),s:[
+  {id:"s6a",kind:"Fractionné",head:"6 × 1000 m à 4'45",steps:[WU,{k:"int",n:6,m:1000,p:285,rec:75},CD]},
+  {id:"s6b",kind:"Footing",head:"11 km tranquille",steps:[{k:"ef",km:11}]}]},
+ {n:7,phase:"Reprise",start:d(2026,12,28),s:[
+  {id:"s7a",kind:"Fractionné long",head:"4 × 2000 m à 4'55",steps:[WU,{k:"int",n:4,m:2000,p:295,rec:120},CD]},
+  {id:"s7b",kind:"Sortie longue",head:"12 km, finir les 3 derniers à 5'10",steps:[{k:"ef",km:9},{k:"run",km:3,p:310,lbl:"Finish"}]}]},
+ {n:8,phase:"Spécifique",tag:"Allégée",start:d(2027,1,4),s:[
+  {id:"s8a",kind:"Seuil",head:"30' continu à 5'05",steps:[WU,{k:"run",min:30,p:305,lbl:"Continu"},CD]},
+  {id:"s8b",kind:"Footing",head:"9 km tranquille",steps:[{k:"ef",km:9}]}]},
+ {n:9,phase:"Spécifique",start:d(2027,1,11),s:[
+  {id:"s9a",kind:"Fractionné long",head:"3 × 3000 m à 4'57",steps:[WU,{k:"int",n:3,m:3000,p:297,rec:150},CD]},
+  {id:"s9b",kind:"Sortie longue",head:"12 km dont 4 km à 5'05",note:"Le placement des 4 km n'est pas imposé : ici au milieu.",steps:[{k:"ef",km:4},{k:"run",km:4,p:305,lbl:"Bloc seuil"},{k:"ef",km:4}]}]},
+ {n:10,phase:"Spécifique",start:d(2027,1,18),s:[
+  {id:"s10a",kind:"Fractionné",head:"5 × 1500 m à 4'50",steps:[WU,{k:"int",n:5,m:1500,p:290,rec:90},CD]},
+  {id:"s10b",kind:"Allure course",head:"10 km dont 5 km à 5'00",note:"Le placement des 5 km n'est pas imposé : ici au milieu.",steps:[{k:"ef",km:3},{k:"run",km:5,p:300,lbl:"Allure course"},{k:"ef",km:2}]}]},
+ {n:11,phase:"Affûtage",start:d(2027,1,25),s:[
+  {id:"s11a",kind:"Fractionné long",head:"3 × 2000 m à 4'55",steps:[WU,{k:"int",n:3,m:2000,p:295,rec:120},CD]},
+  {id:"s11b",kind:"Footing",head:"8 km tranquille",steps:[{k:"ef",km:8}]}]},
+ {n:12,phase:"Affûtage",tag:"Semaine de course",start:d(2027,2,1),s:[
+  {id:"s12a",kind:"Rappel",head:"3 × 1000 m à 4'50",when:"Mardi 2/02",steps:[{k:"ef",min:15,lbl:"Échauffement"},{k:"int",n:3,m:1000,p:290,rec:120},CD]},
+  {id:"s12b",kind:"Déblocage",head:"25' footing + 4 accélérations",when:"Jeudi 4/02",steps:[{k:"ef",min:25},{k:"acc",n:4}]},
+  {id:"race",kind:"La course",head:"10 km à 5'00",when:"Dimanche 7/02",steps:[{k:"run",km:10,p:300,lbl:"10 km"}]}]},
+];
+const TIPS={
+ 1:"Garde au moins 24 h entre une grosse séance de jambes au CrossFit et le fractionné. Sinon tu rates tes allures sans que ce soit un problème de forme.",
+ 2:"Sur le fractionné, la dernière répétition doit être aussi rapide que la première. Si tu exploses à la fin, c'est que tu es parti·e trop vite.",
+ 3:"Le 10 km tranquille est à faire avant le départ du 4/12. Ensuite, rien d'obligatoire jusqu'au 13/12.",
+ 5:"Reprise : pas de rattrapage des séances non faites. Si les jambes sont lourdes, prends la version allégée du fractionné.",
+ 6:"Récup raccourcie à 1'15 cette semaine. Si tu ne tiens plus 4'45 sur les dernières, remets 1'30 plutôt que de ralentir.",
+ 7:"Premiers 2000 m : régularité avant tout. Et sur la sortie longue, les 3 derniers km à 5'10, pas plus vite.",
+ 8:"Semaine allégée côté course. Si la fatigue s'accumule, allège aussi le CrossFit.",
+ 9:"Repère clé : si les 3 × 3000 m à 4'57 passent sans finir à bloc, tu es sur la trajectoire du sub 50. Note tes temps.",
+ 10:"Le bloc de 5 km à 5'00 est une répétition générale : mêmes chaussures et même tenue que le jour J.",
+ 11:"Début de l'affûtage : évite les séances de jambes très lourdes au CrossFit.",
+ 12:"Allège le CrossFit cette semaine, pas de jambes après mardi. Jour J : premier km à 5'00, pas plus vite, même si tout le monde part fort.",
+};
+const ALL=WEEKS.flatMap(w=>w.s.map(s=>({...s,w})));
+const TOTAL=ALL.length;
+
+/* Calculs */
+const zone=p=>p<=295?"fast":p<=300?"race":"seuil";
+const ZH={rec:.28,ef:.45,seuil:.7,race:.82,fast:1};
+const ZC={rec:"var(--z-rec)",ef:"var(--z-ef)",seuil:"var(--z-seuil)",race:"var(--z-race)",fast:"var(--z-fast)"};
+function segs(s){ // [{z,sec}]
+  const out=[];
+  s.steps.forEach(st=>{
+    if(st.k==="ef") out.push({z:"ef",sec:st.min?st.min*60:st.km*360});
+    else if(st.k==="run") out.push({z:zone(st.p),sec:st.min?st.min*60:st.km*st.p});
+    else if(st.k==="int") for(let i=0;i<st.n;i++){out.push({z:zone(st.p),sec:st.m*st.p/1000});if(i<st.n-1)out.push({z:"rec",sec:st.rec});}
+    else if(st.k==="acc") for(let i=0;i<st.n;i++){out.push({z:"fast",sec:20});out.push({z:"rec",sec:60});}
+  });
+  return out;
+}
+function kmOf(s){return s.steps.reduce((a,st)=>a+(st.k==="ef"?(st.km||st.min/6):st.k==="run"?(st.km||st.min*60/st.p):st.k==="int"?st.n*st.m/1000:0),0);}
+function tours(m){const t=m/400,w=Math.floor(t),f=t-w;const fr=f===0?"":f===.5?" ½":f===.25?" ¼":f===.75?" ¾":"";return (w?w:"")+fr+" tour"+(t>1?"s":"");}
+
+function profileSvg(s){
+  const sg=segs(s),tot=sg.reduce((a,x)=>a+x.sec,0),W=1000,H=64,gap=sg.length>20?2:4;
+  let x=0;
+  const rects=sg.map(g=>{const w=g.sec/tot*W,h=ZH[g.z]*H;const r=`<rect x="${(x+gap/2).toFixed(1)}" y="${(H-h).toFixed(1)}" width="${Math.max(1,w-gap).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${ZC[g.z]}"/>`;x+=w;return r;}).join("");
+  return {svg:`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profil de la séance">${rects}</svg>`,min:Math.round(tot/60)};
+}
+
+function stepRows(s,venue){
+  const st=venue==="stade";
+  return s.steps.map(x=>{
+    let col,main,how,big,bigSub;
+    const adv=x.adv?`<span class="adv">conseillé</span>`:"";
+    if(x.k==="ef"){col=ZC.ef;
+      main=(x.lbl||"Footing")+adv;
+      if(x.min){big=x.min+"'";bigSub="tranquille";how="Allure EF, tu dois pouvoir parler.";}
+      else{big=kmTxt(x.km)+" km";bigSub="5'50–6'15/km";how=st?`≈ ${Math.round(x.km*1000/400)} tours de piste. Le canal est plus agréable pour ça.`:"Allure EF, tu dois pouvoir parler.";}
+    }else if(x.k==="int"){col=ZC[zone(x.p)];
+      main=`${x.n} × ${x.m>=1000?kmTxt(x.m/1000)+" km":x.m+" m"} à ${fmt(x.p)}/km`;
+      big=fmt(x.m*x.p/1000);bigSub="par répétition";
+      how=st?`${tours(x.m)} par répétition, ${fmt(x.p*.4)} par tour. Récup ${fmt(x.rec)} entre chaque.`
+            :`Mesure au GPS, demi-tour pendant la récup. Récup ${fmt(x.rec)} entre chaque.`;
+    }else if(x.k==="run"){col=ZC[zone(x.p)];
+      const dist=x.km||x.min*60/x.p;
+      main=`${x.lbl||"Bloc"} à ${fmt(x.p)}/km`;
+      big=x.min?x.min+"'":kmTxt(x.km)+" km";bigSub=x.min?"≈ "+kmTxt(dist.toFixed(1))+" km":"en "+fmt(x.km*x.p);
+      how=st?`${fmt(x.p*.4)} par tour, ≈ ${Math.round(dist*1000/400)} tours.`:`Règle la montre sur ${fmt(x.p)}/km et tiens-la.`;
+    }else if(x.k==="acc"){col=ZC.fast;main=`${x.n} accélérations`;big=x.n+"×";bigSub="progressives";
+      how="Monte en vitesse sur une ligne droite, sans sprinter à fond, puis récupère en marchant.";}
+    return `<li class="step"><i style="background:${col}"></i><div class="main">${main}<div class="how">${how}</div></div><div class="big num">${big}<small>${bigSub}</small></div></li>`;
+  }).join("");
+}
+
+const LAZY=[
+ "Pas besoin d'envie. Juste de tes chaussures.",
+ "10 minutes. Si tu veux rentrer après, tu rentres.",
+ "Tu as déjà couru 49'. Il s'agit juste de le refaire.",
+ "Le 7 février, personne ne demandera s'il pleuvait.",
+ "Le froid, c'est la météo des chronos.",
+ "Deux séances par semaine. Pas de place pour en sauter une.",
+ "Pluie fine = canal désert. Profite.",
+ "Dans une heure c'est fait, et tu seras content·e de l'avoir fait.",
+];
+function mini(s){
+  if(s.id==="race") return "Pas de version mini aujourd'hui.";
+  if(s.steps.some(x=>x.k==="int"||x.k==="run")) return "<b>Version mini :</b> 15' tranquille puis la moitié des répétitions à la bonne allure. Une séance raccourcie vaut mieux qu'une séance sautée.";
+  return "<b>Version mini :</b> 30' tranquille, sans regarder la montre.";
+}
+
+/* Temps cibles d'une séance : répétitions (temps), blocs (allure au km), course (chrono) */
+function targetsOf(s){
+  if(s.id==="race") return [{lbl:"Chrono",t:3000,unit:""}];
+  const out=[];
+  s.steps.forEach(x=>{
+    if(x.k==="int") for(let i=0;i<x.n;i++) out.push({lbl:"Rép. "+(i+1),t:x.m*x.p/1000,unit:""});
+    if(x.k==="run") out.push({lbl:(x.lbl||"Bloc")+" /km",t:x.p,unit:"/km"});
+  });
+  return out;
+}
+function parseT(str){
+  str=(str||"").trim(); if(!str) return null;
+  let m=str.match(/^(\d{1,2})\s*['’:.,h ]\s*(\d{1,2})\s*["”]?$/); if(m&&+m[2]<60) return +m[1]*60+ +m[2];
+  m=str.match(/^(\d{1,2})(\d{2})$/); if(m&&+m[2]<60) return +m[1]*60+ +m[2];
+  return null;
+}
+const tol=t=>Math.max(3,t/150);
+function cls(val,t){const d=val-t;return Math.abs(d)<=tol(t)?"ok":d<0?"fast":"slow";}
+function delta(val,t){const d=Math.round(val-t);return d===0?"pile":(d>0?"+":"−")+Math.abs(d)+" s";}
+
+/* Planning : indices 0 = lundi */
+const DAYS=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+const DAYS_L=["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
+let plan={bad:[],cf:[]};
+function suggest(){
+  if(!plan.bad.length&&!plan.cf.length) return null;
+  const has=(k,i)=>plan[k].includes((i+7)%7), busy=i=>has("bad",i)||has("cf",i);
+  const sA=i=>(busy(i)?-2:3)-(has("cf",i-1)?3:0)-(has("bad",i-1)?1:0)-(has("cf",i+1)?0.5:0);
+  const sB=i=>busy(i)?-1:2;
+  let best=null;
+  for(let a=0;a<7;a++)for(let b=0;b<7;b++){
+    const dist=Math.min(Math.abs(a-b),7-Math.abs(a-b)); if(dist<1) continue;
+    const sc=sA(a)+sB(b)+(dist>=3?0.3:0)-(dist===1?1:0)-(a>b?0.05:0);
+    if(!best||sc>best.sc) best={a,b,sc};
+  }
+  const why=[];
+  why.push(`<span><b>A, ${DAYS_L[best.a]}</b> : ${busy(best.a)?"jour déjà chargé, fais la course avant l'autre sport":"jour sans autre sport"}${has("cf",best.a-1)?"":", pas de CrossFit la veille"}.</span>`);
+  why.push(`<span><b>B, ${DAYS_L[best.b]}</b> : ${busy(best.b)?"jour partagé, le footing reste tranquille":"jour sans autre sport"}.</span>`);
+  if(has("cf",best.a-1)) why.push(`<span class="warn">Impossible d'éviter le CrossFit la veille de la séance A : ce jour-là, fais plutôt du haut du corps.</span>`);
+  return {...best,why};
+}
+
+/* Stockage : espace privé synchronisé, avec copie locale */
+let state={},bonus=0,venues={};
+const LS="sub50-v1";
+try{const o=JSON.parse(localStorage.getItem(LS)||"{}");state=o.state||{};bonus=o.bonus||0;venues=o.venues||{};plan=o.plan||plan;}catch(e){}
+const lsSave=()=>{try{localStorage.setItem(LS,JSON.stringify({state,bonus,venues,plan}));}catch(e){}};
+let store={save(){lsSave();},saveBonus(){lsSave();},savePlan(){lsSave();}};
+async function initDb(){
+  if(!window.claude?.use) return;
+  try{
+    const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+    if(!db||!user) return;
+    const uid=await user.id(); if(!uid) return;
+    const col=db.collection("data/users/"+uid), note=document.getElementById("syncNote");
+    const t=setTimeout(()=>{note.textContent="Synchronisation lente : tes séances restent enregistrées sur cet appareil.";},10000);
+    let first=true;
+    col.onSnapshot(snap=>{
+      if(!snap.metadata.fromCache){clearTimeout(t);note.textContent="Séances synchronisées sur tous tes appareils.";}
+      const remote={};let rb=null,rp=null;
+      snap.docs.forEach(doc=>{const v=doc.data();if(doc.id==="bonus")rb=v.count||0;else if(doc.id==="planning")rp=v;else if(doc.id.startsWith("sess-"))remote[doc.id.slice(5)]=v;});
+      if(first&&snap.empty&&!snap.metadata.fromCache&&(Object.keys(state).length||plan.bad.length||plan.cf.length)){
+        Object.entries(state).forEach(([id,v])=>col.doc("sess-"+id).set(v).catch(()=>{}));
+        if(bonus) col.doc("bonus").set({count:bonus}).catch(()=>{});
+        col.doc("planning").set({bad:plan.bad,cf:plan.cf}).catch(()=>{});
+      }else if(!snap.metadata.fromCache||!snap.empty){state=remote;if(rb!==null)bonus=rb;if(rp)plan={bad:rp.bad||[],cf:rp.cf||[]};lsSave();render();}
+      first=false;
+    },()=>{clearTimeout(t);note.textContent="Synchronisation indisponible : les séances restent sur cet appareil.";});
+    store={save(id){lsSave();const v=state[id],r=col.doc("sess-"+id);(v?r.set(v):r.delete()).catch(()=>{});},
+           saveBonus(){lsSave();col.doc("bonus").set({count:bonus}).catch(()=>{});},
+           savePlan(){lsSave();col.doc("planning").set({bad:plan.bad,cf:plan.cf}).catch(()=>{});}};
+  }catch(e){}
+}
+
+/* État d'écran */
+const T0=(()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());})();
+const wEnd=w=>w.end||new Date(w.start.getFullYear(),w.start.getMonth(),w.start.getDate()+(w.endOff||6));
+function currentWeekIdx(){let i=WEEKS.findIndex(w=>T0>=w.start&&T0<=wEnd(w));if(i<0)i=T0<WEEKS[0].start?0:WEEKS.length-1;return i;}
+let sel=currentWeekIdx(),feelOpen=null,lazyOpen=false,lazyIdx=Math.floor(Math.random()*LAZY.length);
+
+function render(){
+  const doneS=ALL.filter(s=>state[s.id]?.done),n=doneS.length;
+  document.getElementById("days").innerHTML=`<small>J-</small>${Math.max(0,Math.round((RACE-T0)/864e5))}`;
+  document.getElementById("nDone").textContent=n;
+  document.getElementById("nKm").textContent=Math.round(doneS.reduce((a,s)=>a+kmOf(s),0));
+  document.getElementById("barFill").style.width=(n/TOTAL*100)+"%";
+
+  const cur=currentWeekIdx();
+  const wk=document.getElementById("weeks");
+  wk.innerHTML=WEEKS.map((w,i)=>`<button class="wk ${i===sel?"sel":""} ${i===cur?"now":""} ${w.vac?"vac":""}" data-i="${i}" aria-label="${w.vac?"Vacances":"Semaine "+w.n}">
+      <span>${w.vac?"974":w.n}</span><div class="dots">${w.vac?"<i></i>":w.s.map(s=>`<i class="${state[s.id]?.done?"on":""}"></i>`).join("")}</div></button>`).join("");
+  wk.querySelectorAll(".wk").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;feelOpen=null;lazyOpen=false;render();});
+
+  const w=WEEKS[sel],box=document.getElementById("week");
+  if(w.vac){
+    box.innerHTML=`<div class="vac"><span class="label" style="color:#8FC1BE">Vacances · 4 au 12 décembre</span><b class="t">La Réunion</b>
+      <p>Rien de prévu. Quelques footings faciles sont un bonus, pas une obligation. Une semaine sans courir ne fait pas perdre grand-chose.</p>
+      <div class="counter"><button id="bm" aria-label="Retirer un footing">−</button><b class="num">${bonus}</b><button id="bp" aria-label="Ajouter un footing">+</button><span style="color:#B9D3D2">footing${bonus>1?"s":""} bonus</span></div></div>`;
+    box.querySelector("#bp").onclick=()=>{bonus++;store.saveBonus();render();toast("Footing bonus noté.");};
+    box.querySelector("#bm").onclick=()=>{if(bonus>0){bonus--;store.saveBonus();render();}};
+    return;
+  }
+  const next=ALL.find(s=>!state[s.id]?.done);
+  const range=`${dstr(w.start)} → ${dstr(wEnd(w))}`;
+  const sg=suggest();
+  const planLine=w.n===12?`<div class="plan-line">Jours imposés : <b>mardi</b>, <b>jeudi</b>, course <b>dimanche</b>.</div>`
+    :sg?`<div class="plan-line">Avec ta semaine type : séance A <b>${DAYS_L[sg.a]}</b>, séance B <b>${DAYS_L[sg.b]}</b>.</div>`
+    :`<div class="plan-line">Remplis « Ta semaine type » plus bas pour savoir quels jours courir.</div>`;
+  box.innerHTML=`<div class="wk-head"><div><div class="phase">${w.phase}${w.tag?" · "+w.tag:""}</div><h2>Semaine ${w.n}</h2><div class="sub">${range}${sel===cur?" · cette semaine":""}</div></div>
+      <button class="lazy-btn" id="lz" aria-expanded="${lazyOpen}">J'ai la flemme</button></div>
+    ${planLine}
+    ${TIPS[w.n]?`<div class="tip"><b>Conseil</b><span>${TIPS[w.n]}</span></div>`:""}
+    ${lazyOpen&&next?`<div class="lazy"><q>${LAZY[lazyIdx]}</q><p>${mini(next)}</p><button class="link" id="lzm">Encore un argument →</button></div>`:""}
+    ${w.s.map(s=>card({...s,w},next,sg)).join("")}`;
+  box.querySelector("#lz").onclick=()=>{lazyOpen=!lazyOpen;render();};
+  box.querySelector("#lzm")?.addEventListener("click",()=>{lazyIdx=(lazyIdx+1)%LAZY.length;render();});
+  box.querySelectorAll("[data-venue]").forEach(b=>b.onclick=()=>{venues[b.dataset.id]=b.dataset.venue;lsSave();render();});
+  box.querySelectorAll("[data-do]").forEach(b=>b.onclick=()=>{const id=b.dataset.do;
+    if(state[id]?.done){delete state[id];store.save(id);render();return;}
+    feelOpen=feelOpen===id?null:id;render();});
+  box.querySelectorAll("[data-feel]").forEach(b=>b.onclick=()=>{const id=b.dataset.id,s=ALL.find(x=>x.id===id);
+    const times=targetsOf(s).map((_,j)=>parseT(document.getElementById(`t-${id}-${j}`)?.value));
+    state[id]={done:true,feel:b.dataset.feel,at:new Date().toISOString(),...(times.some(x=>x!==null)?{times}:{})};
+    store.save(id);feelOpen=null;lazyOpen=false;render();
+    if(id==="race"&&times[0]&&times[0]<3000) toast("SUB 50 en "+fmt(times[0])+" !"); else cheer();});
+  renderPlanner();
+}
+function renderPlanner(){
+  const el=document.getElementById("planner"),sg=suggest();
+  el.innerHTML=DAYS.map((dn,i)=>{const r=sg?(sg.a===i?"A":sg.b===i?"B":""):"";
+    return `<div class="pd"><span class="dn">${dn}</span>
+      <button data-p="bad" data-d="${i}" aria-pressed="${plan.bad.includes(i)}">Bad</button>
+      <button data-p="cf" data-d="${i}" aria-pressed="${plan.cf.includes(i)}">CF</button>
+      <div class="run ${r?"on":""} ${r==="B"?"b":""}">${r||"–"}</div></div>`;}).join("");
+  el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const k=b.dataset.p,i=+b.dataset.d;
+    plan[k]=plan[k].includes(i)?plan[k].filter(x=>x!==i):[...plan[k],i].sort();store.savePlan();render();});
+  const n=plan.bad.length+plan.cf.length;
+  document.getElementById("why").innerHTML=sg?sg.why.join("")+(n!==5?`<span>Tu as indiqué ${n} séance${n>1?"s":""} de bad/CrossFit, pour 5 annoncées.</span>`:"")
+    :"<span>Aucun jour indiqué pour l'instant.</span>";
+}
+function logPanel(s){
+  const tg=targetsOf(s);
+  return `<div class="log">
+    ${tg.length?`<div class="feel-q">Tes temps (facultatif), au format 3'44</div>
+    <div class="log-grid">${tg.map((x,j)=>`<label for="t-${s.id}-${j}">${x.lbl}<input id="t-${s.id}-${j}" inputmode="text" autocomplete="off" placeholder="${fmt(x.t)}"></label>`).join("")}</div>`:""}
+    <div class="feel-q">C'était comment ?</div>
+    <div class="feels">${["Facile","Correct","Dur"].map(f=>`<button data-feel="${f}" data-id="${s.id}">${f}</button>`).join("")}</div></div>`;
+}
+function timesView(s,v){
+  if(!v.times) return "";
+  const tg=targetsOf(s);
+  const chips=v.times.map((t,j)=>t===null||!tg[j]?"":`<span class="tm ${cls(t,tg[j].t)}"><b class="num">${fmt(t)}</b>${tg[j].lbl} · ${delta(t,tg[j].t)}</span>`).join("");
+  let verdict="";
+  if(s.id==="s9a"){
+    const got=v.times.filter(x=>x!==null);
+    if(got.length===3){
+      const held=got.every((t,j)=>t<=tg[j].t+tol(tg[j].t));
+      verdict=held&&v.feel!=="Dur"?`<div class="verdict good">Repère validé : allures tenues sans finir à bloc. Tu es sur la trajectoire du sub 50.</div>`
+        :held?`<div class="verdict">Allures tenues, mais c'était dur. Reste sur le plan et pars bien à 5'00 le jour J, pas plus vite.</div>`
+        :`<div class="verdict">Allures pas tout à fait tenues. Une séance ne fait pas le résultat : regarde la semaine 10 et la fatigue CrossFit avant de conclure.</div>`;
+    }
+  }
+  return `<div class="times">${chips}</div>${verdict}`;
+}
+function card(s,next,sg){
+  const v=state[s.id],done=!!v?.done;
+  const venue=venues[s.id]||(s.steps.some(x=>x.k==="int")?"stade":"canal");
+  const p=profileSvg(s);
+  const role=/^s\d+a$/.test(s.id)?"a":/^s\d+b$/.test(s.id)?"b":null;
+  const day=s.when||(sg&&role&&s.w.n!==12?DAYS_L[sg[role]].replace(/^./,c=>c.toUpperCase())+" conseillé":"");
+  return `<article class="card ${done?"done":""}">
+    <div class="card-top"><div><div class="kind">${s.kind}</div><div class="when">${day?day+" · ":""}≈ ${p.min} min · ≈ ${kmTxt(kmOf(s).toFixed(1))} km</div></div>
+      ${done?`<span class="badge ok">Fait · ${v.feel||""}</span>`:next&&next.id===s.id?`<span class="badge todo">Prochaine</span>`:""}</div>
+    <div class="headline">${s.head}</div>
+    <div class="profile">${p.svg}<div class="prof-axis"><span>départ</span><span>${p.min} min</span></div></div>
+    ${s.note?`<div class="note">${s.note}</div>`:""}
+    <div class="venue" role="group" aria-label="Lieu">
+      <button data-venue="stade" data-id="${s.id}" aria-pressed="${venue==="stade"}">Au stade</button>
+      <button data-venue="canal" data-id="${s.id}" aria-pressed="${venue==="canal"}">Au canal</button></div>
+    <ol class="steps">${stepRows(s,venue)}</ol>
+    <div class="foot">
+      ${done?timesView(s,v):""}
+      ${feelOpen===s.id&&!done?logPanel(s):`<button class="do" data-do="${s.id}">${done?"Annuler":"C'est fait"}</button>`}
+    </div></article>`;
+}
+function cheer(){const n=ALL.filter(s=>state[s.id]?.done).length,l=TOTAL-n;
+  toast(l===0?"Programme bouclé. Va chercher ce sub 50.":l===1?"Il ne reste plus que la course.":`${n}/24. Plus que ${l}.`);}
+let tt;function toast(m){const e=document.getElementById("toast");e.textContent=m;e.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("show"),2400);}
+
+document.getElementById("splits").innerHTML=Array.from({length:10},(_,i)=>`<div class="sp ${i===4?"mid":i===9?"end":""}"><span>km ${i+1}</span><b class="num">${fmt((i+1)*300)}</b></div>`).join("");
+render();initDb();
+</script>
